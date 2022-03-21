@@ -1,4 +1,4 @@
-# This app is made for lighthouse labs project
+# TINY APP  (This app is made for lighthouse labs project)
 
 ## Description
 - A full stack web app built with Node and Express that allows users to shorten long URLs 
