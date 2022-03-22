@@ -69,11 +69,25 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-// Delete URL using POST
+// Edit URL 
+
+app.post('/urls/:shortURL/edit', (req, res) => {
+  const shortURL = req.params.shortURL
+  urlDatabase[shortURL] = req.body.editURL
+})
+
+
+// redirect to urls_show page
+app.get('/urls/:shortURL/edit', (req, res) => {
+  const shortURL = req.params.shortURL;
+  res.redirect(`/urls/${shortURL}`)
+})
+
+
+// Delete URL using POST and redirect to urls page
 app.post('/urls/:shortURL/delete', (req, res) => {
   delete urlDatabase[req.params.shortURL];
   res.redirect('/urls')
-
 })
 
 app.listen(PORT, () => {
