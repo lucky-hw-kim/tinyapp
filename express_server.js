@@ -22,12 +22,21 @@ app.get("/urls/new", (req, res) => {
   res.render('urls_new')
 })
 
+// User request short url
+// Add urls to urlDatabase
 app.post("/urls", (req, res) => {
-  console.log(req.body);
-  res.send("OK");
+  let shortURL = generateRandomString()
+  urlDatabase[shortURL] = req.body.longURL;
+  res.redirect(200, `/urls/${shortURL}`);
+  console.log(req.body.longURL, shortURL);
 })
 
-app.get('/urls/:shortURL', (req, res) => {
+app.get("/u/:shortURL", (req, res) => {
+  const longURL = urlDatabase[shortURL];
+  res.redirect(longURL);
+})
+
+app.get(`/urls/:shortURL`, (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];
   const templateVars = { shortURL, longURL };
@@ -55,12 +64,8 @@ app.listen(PORT, () => {
 function generateRandomString() {
   let result = '';
   const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const split = alphabet.split(',');
-  console.log(split);
   for (let i = 0; i < 6; i++) {
     result += alphabet[Math.floor(Math.random() * alphabet.length)];
   }
   return result;
 }
-
-generateRandomString();
