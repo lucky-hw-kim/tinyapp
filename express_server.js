@@ -48,12 +48,14 @@ app.get(`/urls/:shortURL`, (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];
   const templateVars = { shortURL, longURL };
-  if (urlDatabase[shortURL]) {
+  if (longURL) {
     res.render('urls_show', templateVars);
   } else {
     res.status(404).send('Error 404: Page Not Found');
   }
 });
+
+
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -67,11 +69,19 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+// Delete URL using POST
+app.post('/urls/:shortURL/delete', (req, res) => {
+  delete urlDatabase[req.params.shortURL];
+  res.redirect('/urls')
+
+})
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
 
+// Function to generater 6 random alphabet string
 const generateRandomString = function () {
   let result = '';
   const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
