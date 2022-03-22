@@ -70,14 +70,14 @@ app.get("/urls.json", (req, res) => {
 });
 
 // Edit URL 
-
 app.post('/urls/:shortURL/edit', (req, res) => {
   const shortURL = req.params.shortURL
   urlDatabase[shortURL] = req.body.editURL
+  res.redirect('/urls')
 })
 
 
-// redirect to urls_show page
+// redirect to urls_show page via edit buttons
 app.get('/urls/:shortURL/edit', (req, res) => {
   const shortURL = req.params.shortURL;
   res.redirect(`/urls/${shortURL}`)
