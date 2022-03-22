@@ -27,13 +27,20 @@ app.get("/urls/new", (req, res) => {
 app.post("/urls", (req, res) => {
   let shortURL = generateRandomString()
   urlDatabase[shortURL] = req.body.longURL;
-  res.redirect(200, `/urls/${shortURL}`);
-  console.log(req.body.longURL, shortURL);
+  res.redirect(`/urls/${shortURL}`);
 })
 
+// Redirecting shortURL to longURL
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[shortURL];
-  res.redirect(longURL);
+  const longURL = urlDatabase[req.params.shortURL]
+  console.log("Adding urls", urlDatabase[req.params.shortURL]);
+  if (longURL){
+    res.redirect(longURL)
+  } else {
+    const error = "404 Page Not Found"
+  }
+
+  
 })
 
 app.get(`/urls/:shortURL`, (req, res) => {
