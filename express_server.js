@@ -4,6 +4,7 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
+const { render } = require('express/lib/response');
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser())
 app.set("view engine", "ejs");
@@ -17,6 +18,18 @@ const urlDatabase = {
   // "9sm5xK": "http://www.google.com",
   // "S152tx": "http://www.tsn.ca"
 };
+
+ // const userEmail = req.body.email
+  // const userPassword = req.body.password
+
+// Sign up page (Register) 
+app.get("/register", (req, res) => {
+  const templateVars = { 
+    username: req.cookies.username,
+    urls: urlDatabase 
+  };
+   res.render('urls_register', templateVars);
+})
 
 // Handle login (matches 'username' with username)
 app.post("/login", (req, res) => {
@@ -33,7 +46,7 @@ app.post('/logout', (req, res) => {
   
 })
 
-
+// render main index page
 app.get("/urls", (req, res) => {
   const templateVars = { 
    username: req.cookies.username,
@@ -41,17 +54,15 @@ app.get("/urls", (req, res) => {
   res.render('urls_index', templateVars);
 });
 
-
+// Render new page for inputting original url
 app.get("/urls/new", (req, res) => {
-
   const templateVars = { 
     username: req.cookies.username,
     urls: urlDatabase };
   res.render('urls_new', templateVars);
 });
 
-// User request short url
-// Add urls to urlDatabase
+// User request short url & Add urls to urlDatabase
 app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
   urlDatabase[shortURL] = req.body.longURL;
