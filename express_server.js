@@ -19,15 +19,34 @@ const urlDatabase = {
   // "S152tx": "http://www.tsn.ca"
 };
 
- // const userEmail = req.body.email
-  // const userPassword = req.body.password
+const users = { 
+  "user1RandomID": {
+    id: "userRandomID", 
+    email: "user1@a.com", 
+    password: "123"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@a.com", 
+    password: "123"
+  }
+}
 
-// Sign up page (Register) 
+// Handle registration form data
+app.post("/register", (req, res) => {
+  const randomId = generateRandomString();
+  let info = {id: randomId, email: req.body.email, password: req.body.password}
+  users[randomId] = info
+  console.log(users);
+  res.cookie('user_id', randomId);
+  res.redirect('/urls');
+})
+
+// Render sign up page (Register) 
 app.get("/register", (req, res) => {
   const templateVars = { 
     username: req.cookies.username,
-    urls: urlDatabase 
-  };
+    urls: urlDatabase };
    res.render('urls_register', templateVars);
 })
 
