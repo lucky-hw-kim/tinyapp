@@ -10,11 +10,20 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
     </div>
+    <% if(!username){%>
     <div class="ms-auto">
       <form method="POST" action="/login" class="form-inline my-2 my-lg-0">
         <input type="text" name="username" placeholder= Username class="form-control form-control-dark mr-sm-2">
         <button type="submit" class = "btn btn-outline-dark my-2 my-sm-0">Login</button>
       </form>
     </div>
+    <% } else {%>
+      <div class="ms-auto">
+        <form method="POST" action="/logout" class="form-inline my-2 my-lg-0">
+          <p class="nav-item text-center pt-3 mr-4">Logged In As: <%= username %> User!</p>
+          <button type="submit" class = "btn btn-outline-dark my-2 my-sm-0">Logout</button>
+        </form>
+      </div>
+    <% } %>
   </nav>
 </header>

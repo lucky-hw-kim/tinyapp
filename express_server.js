@@ -1,28 +1,54 @@
-var cookieParser = require('cookie-parser');
+const cookieParser = require('cookie-parser');
+const morgan = require("morgan");
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
-
+app.use(cookieParser())
 app.set("view engine", "ejs");
 
+app.use(morgan("dev"))
+
+
+
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
-  "S152tx": "http://www.tsn.ca"
+  // "b2xVn2": "http://www.lighthouselabs.ca",
+  // "9sm5xK": "http://www.google.com",
+  // "S152tx": "http://www.tsn.ca"
 };
+
+// Handle login (matches 'username' with username)
+app.post("/login", (req, res) => {
+  res.cookie('username', req.body.username)
+  res.redirect('/urls')
+  console.log(`${req.body.username} logged in!`)
+})
+
+// Handle logout (clear current username cookie)
+app.post('/logout', (req, res) => {
+  console.log(`${req.cookies.username} logged out!`)
+  res.clearCookie('username')
+  res.redirect('/urls')
+  
+})
 
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = { 
+   username: req.cookies.username,
+   urls: urlDatabase };
   res.render('urls_index', templateVars);
 });
 
-app.get("/urls/new", (req, res) => {
-  res.render('urls_new');
-});
 
+app.get("/urls/new", (req, res) => {
+
+  const templateVars = { 
+    username: req.cookies.username,
+    urls: urlDatabase };
+  res.render('urls_new', templateVars);
+});
 
 // User request short url
 // Add urls to urlDatabase
@@ -49,15 +75,16 @@ app.get("/u/:shortURL", (req, res) => {
 app.get(`/urls/:shortURL`, (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];
-  const templateVars = { shortURL, longURL };
+  const templateVars = { 
+    username: req.cookies.username,
+    shortURL, 
+    longURL };
   if (longURL) {
     res.render('urls_show', templateVars);
   } else {
     res.status(404).send('Error 404: Page Not Found');
   }
 });
-
-
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -71,12 +98,6 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-// Handle login server
-app.post("/login", (req, res) => {
-  const id = req.body.username
-  console.log(id)
-  res.redirect('/urls')
-})
 
 // Edit URL & redirect to urls page
 app.post('/urls/:shortURL/edit', (req, res) => {
