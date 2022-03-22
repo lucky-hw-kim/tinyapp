@@ -33,22 +33,26 @@ app.post("/urls", (req, res) => {
 // Redirecting shortURL to longURL
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL]
-  console.log("Adding urls", urlDatabase[req.params.shortURL]);
-  if (longURL){
+  console.log('longURL', longURL)
+  if (longURL) {
+    if (longURL === undefined) {
+      res.status(500).send('ERROR: BAD REQUEST ')
+    }
     res.redirect(longURL)
   } else {
-    const error = "404 Page Not Found"
+    res.status(500).send('ERROR: I think you forgot to put http:// in longURL')
   }
-
-  
 })
 
 app.get(`/urls/:shortURL`, (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];
   const templateVars = { shortURL, longURL };
-
+  if(urlDatabase[shortURL]){
   res.render('urls_show', templateVars)
+  } else {
+    res.status(404).send('Error 404: Page Not Found')
+  }
 })
 
 app.get("/", (req, res) => {
