@@ -6,14 +6,11 @@ const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const { render } = require('express/lib/response');
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieParser())
+app.use(cookieParser());
 app.set("view engine", "ejs");
-
-app.use(morgan("dev"))
+app.use(morgan("dev"));
 
 /* DO All THE ERROR CASES!!!!!! */
-
-
 
 const urlDatabase = {
   // "b2xVn2": "http://www.lighthouselabs.ca",
@@ -21,91 +18,62 @@ const urlDatabase = {
   // "S152tx": "http://www.tsn.ca"
 };
 
-const users = { 
+const users = {
   "user1RandomID": {
-    id: "userRandomID", 
-    email: "user1@a.com", 
+    id: "userRandomID",
+    email: "user1@a.com",
     password: "123"
   },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@a.com", 
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@a.com",
     password: "123"
   }
-}
+};
 
-/* 
-GET/ 
+/*
+GET/
 if user is logged in redirect to /urls
-if not redirect to /login 
+if not redirect to /login
 */
 
 // render main index page (when logged in)
 app.get("/urls", (req, res) => {
   const date = new Date().toLocaleDateString();
-  const templateVars = { 
-   createdDate: date,
-   user: users[req.cookies.user_id],
-   urls: urlDatabase };
-   console.log(users)
+  const templateVars = {
+    createdDate: date,
+    user: users[req.cookies.user_id],
+    urls: urlDatabase };
   res.render('urls_index', templateVars);
 });
 
 // Handle login page
 app.post("/login", (req, res) => {
-  res.redirect('/urls')
-  console.log(`${req.body.user_id} logged in!`)
-})
+  res.redirect('/urls');
+  console.log(`${req.body.user_id} logged in!`);
+});
 
 /* GET /urls */
 
 // Handle logout (clear current user_id cookie)
 app.post('/logout', (req, res) => {
-  console.log(`${req.cookies.use_id} logged out!`)
-  res.clearCookie('user_id')
-  res.redirect('/urls')
+  console.log(`${req.cookies.use_id} logged out!`);
+  res.clearCookie('user_id');
+  res.redirect('/urls');
   
-})
+});
 
 // Edit URL & redirect to urls page
 app.post('/urls/:shortURL/edit', (req, res) => {
-  const shortURL = req.params.shortURL
-  urlDatabase[shortURL] = req.body.editURL
-  res.redirect('/urls')
-})
+  const shortURL = req.params.shortURL;
+  urlDatabase[shortURL] = req.body.editURL;
+  res.redirect('/urls');
+});
 
 // Delete URL using POST and redirect to urls page
 app.post('/urls/:shortURL/delete', (req, res) => {
   delete urlDatabase[req.params.shortURL];
-  res.redirect('/urls')
-})
-
-
-// Handle registration form data
-app.post("/register", (req, res) => {
-  const randomId = generateRandomString();
-  users[randomId] = {id: randomId, email: req.body.email, password: req.body.password}
-  
-  res.cookie('user_id', randomId)
-  res.redirect('/urls')
-})
-
-// Render sign up page (Register) 
-app.get("/register", (req, res) => {
-  const templateVars = { 
-  user: users[req.cookies.user_id],
-  urls: urlDatabase };
-  res.render('urls_register', templateVars);
-})
-
-
-
-// Render new page for inputting original url
-app.get("/urls/new", (req, res) => {
-  const templateVars = { 
-    user : users[req.cookies.user_id],
-    urls: urlDatabase };
-  res.render('urls_new', templateVars);
+  res.redirect('/urls');
 });
 
 // User request short url & Add urls to urlDatabase
@@ -115,42 +83,78 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
+// Handle registration form data (email & password)
+app.post("/register", (req, res) => {
+ for(const key in users){
+    if(users[key].email === req.body.email){
+    res.status(403).send('This Email is alreay taken 🥷');
+    } 
+  }
+  if(req.body.email === '' || req.body.password === '' ){
+    res.status(406).send('You MUST enter email && password 🤬');
+  } 
+  const randomId = generateRandomString();
+  users[randomId] = {
+    id: randomId, 
+    email: req.body.email, 
+    password: req.body.password
+  }
+  res.cookie('user_id', randomId);
+  res.redirect('/urls');
+});
+
+// Render sign up page (Register)
+app.get("/register", (req, res) => {
+  const templateVars = {
+    user: users[req.cookies.user_id],
+    urls: urlDatabase };
+  res.render('urls_register', templateVars);
+});
+
+
+
+// Render new page for inputting original url
+app.get("/urls/new", (req, res) => {
+  const templateVars = {
+    user : users[req.cookies.user_id],
+    urls: urlDatabase };
+  res.render('urls_new', templateVars);
+});
+
+
 // Redirecting shortURL to longURL
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL];
-  console.log('longURL', longURL);
   if (longURL) {
     if (longURL === undefined) {
-      res.status(500).send('ERROR: BAD REQUEST ');
+      res.status(404).send('ERRrrr... Page Not Found 🥲 ');
     }
     res.redirect(longURL);
   } else {
-    res.status(500).send('ERROR: I think you forgot to put http:// in longURL');
+    res.status(404).send('Hmmmm...🧐 Are you sure about the URL? ');
   }
 });
 
 app.get(`/urls/:shortURL`, (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];
-  const templateVars = { 
+  const templateVars = {
     user: users[req.cookies.user_id],
-    shortURL, 
+    shortURL,
     longURL };
   if (longURL) {
     res.render('urls_show', templateVars);
   } else {
-    res.status(404).send('Error 404: Page Not Found');
+    res.status(404).send('ERRrrr... cannot reach further 👻');
   }
 });
-
 
 
 // redirect to urls_show page via edit buttons
 app.get('/urls/:shortURL/edit', (req, res) => {
   const shortURL = req.params.shortURL;
-  res.redirect(`/urls/${shortURL}`)
-})
-
+  res.redirect(`/urls/${shortURL}`);
+});
 
 
 app.listen(PORT, () => {
@@ -159,14 +163,14 @@ app.listen(PORT, () => {
 
 
 // Function to generater 6 random alphabet string
-const generateRandomString = function () {
+const generateRandomString = function() {
   let result = '';
   const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
   for (let i = 0; i < 6; i++) {
     result += alphabet[Math.floor(Math.random() * alphabet.length)];
   }
   return result;
-}
+};
 
 // app.get("/", (req, res) => {
 //   res.send("Hello!");
