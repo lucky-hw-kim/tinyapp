@@ -22,7 +22,7 @@ const users = {
   "user1RandomID": {
     id: "userRandomID",
     email: "user1@a.com",
-    password: "123"
+    password: "abc"
   },
   "user2RandomID": {
     id: "user2RandomID",
@@ -47,13 +47,32 @@ app.get("/urls", (req, res) => {
   res.render('urls_index', templateVars);
 });
 
-// Handle login page
+// POST action for when user login
 app.post("/login", (req, res) => {
+  if(emailChecker(req.body.email, users)) {
+    if(!passwordChecker(req.body.password, users)) {
+      console.log(req.body.password);
+      res.status(403).send("DOUBLE & TRIPLE CHECK YOUR PASSWARDDDdddddd!🤌")
+    } else {
+      const userId = getUserId(req.body.email, users);
+      console.log(userId)
+      users[userId] = {
+        id: userId, 
+        email: req.body.email, 
+        password: req.body.password
+      }
+      res.cookie('user_id', userId);
+    }
+  }
+  if(!emailChecker(req.body.email, users)){
+    res.status(403).send("DOUBLE & TRIPLE CHECK YOUR EMAIL ADDRESSSSSssss!🤌")
+  }
   res.redirect('/urls');
-  console.log(`${req.body.user_id} logged in!`);
+  console.log(`${req.cookies.use_id} logged in!`);
 });
 
 /* GET /urls */
+
 
 // Handle logout (clear current user_id cookie)
 app.post('/logout', (req, res) => {
@@ -85,10 +104,8 @@ app.post("/urls", (req, res) => {
 
 // Handle registration form data (email & password)
 app.post("/register", (req, res) => {
- for(const key in users){
-    if(users[key].email === req.body.email){
-    res.status(403).send('This Email is alreay taken 🥷');
-    } 
+  if(emailChecker(req.body.email, users)){
+  res.status(403).send('This Email is alreay taken 🥷');
   }
   if(req.body.email === '' || req.body.password === '' ){
     res.status(406).send('You MUST enter email && password 🤬');
@@ -111,7 +128,14 @@ app.get("/register", (req, res) => {
   res.render('urls_register', templateVars);
 });
 
-
+// Render login page 
+app.get("/login", (req, res) => {
+  const templateVars = {
+    user: users[req.cookies.user_id],
+    urls: urlDatabase };
+    console.log(templateVars);
+  res.render('urls_login', templateVars);
+});
 
 // Render new page for inputting original url
 app.get("/urls/new", (req, res) => {
@@ -161,6 +185,7 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
+// Functions!
 
 // Function to generater 6 random alphabet string
 const generateRandomString = function() {
@@ -171,6 +196,48 @@ const generateRandomString = function() {
   }
   return result;
 };
+
+// Function to look up existing Email
+const emailChecker = function(userEmail, users) {
+  for(const user in users){
+    if(users[user].email === userEmail){
+    return true;
+    } else {
+      return false
+    }
+  }
+}
+
+const passwordChecker = function(userPassword, users) {
+  for(const user in users){
+    if(users[user].password === userPassword){
+    return true;
+    } else {
+      return false
+    }
+  }
+}
+
+
+const getUserId = function(userEmail, users) {
+  for(const user in users) {
+    if(emailChecker(userEmail, users)) {
+      return users[user].id
+    }
+  }
+}
+
+const cookieChecker = function(cookie, users) {
+  for(const user in users){
+    if(cookie === users[user]) {
+      return true;
+    }
+    else {
+      return false
+    }
+  }
+}
+
 
 // app.get("/", (req, res) => {
 //   res.send("Hello!");

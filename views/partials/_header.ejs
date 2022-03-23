@@ -11,10 +11,12 @@
       </div>
     </div>
     <% if(!user){%>
-    <div class="ms-auto">
-      <form method="POST" action="/login" class="form-inline my-2 my-lg-0">
-        <input type="text" name="user.email" placeholder= "User_ID" class="form-control form-control-dark mr-sm-2">
+    <div class="ms-auto form-inline p-2">
+      <form method="GET" action="/login" class="form-inline my-2 my-lg-0 mr-2">
         <button type="submit" class = "btn btn-outline-dark my-2 my-sm-0">Login</button>
+      </form>
+      <form method="GET" action="/register" class="form-inline my-2 my-lg-0">
+        <button type="submit" class = "btn btn-dark my-2 my-sm-0">Sign-up</button>
       </form>
     </div>
     <% } else {%>
