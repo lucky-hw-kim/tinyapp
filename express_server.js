@@ -40,11 +40,28 @@ const users = {
   }
 };
 
-/*
-GET/
-if user is logged in redirect to /urls
-if not redirect to /login
-*/
+//Main Home Page
+app.get("/", (req, res) => {
+  if (!req.cookies.user_id) {
+  res.redirect("/login");
+  } res.redirect("/urls");
+});
+
+// render main index page (when logged in)
+app.get("/urls", (req, res) => {
+  const userId = req.cookies.user_id
+  const userUrl = getUserUrl(userId, urlDatabase);
+  const templateVars = {
+    date: new Date().toLocaleDateString(),
+    user: users[req.cookies.user_id],
+    userUrl: userUrl
+  }
+  if (!req.cookies.user_id) {
+    res.redirect('/login')
+  } else {
+    res.render('urls_index', templateVars);
+  }
+});
 
 // Handle registration form data (email & password)
 app.post("/register", (req, res) => {
@@ -117,7 +134,9 @@ app.post('/logout', (req, res) => {
 // Edit URL & redirect to urls page
 app.post('/urls/:shortURL/edit', (req, res) => {
   const shortURL = req.params.shortURL;
-  urlDatabase[shortURL] = req.body.editURL;
+  const userId = req.cookies.user_id
+  const userUrl = getUserUrl(userId, urlDatabase);
+  userUrl[shortURL].longURL = req.body.editURL;
   res.redirect('/urls');
 });
 
@@ -142,27 +161,6 @@ app.get("/urls/new", (req, res) => {
     res.render('urls_new', templateVars);
 });
 
-
-// render main index page (when logged in)
-app.get("/urls", (req, res) => {
-  const date = new Date().toLocaleDateString();
-  const shortURL = req.params.shortURL;
-  const userId = req.cookies.user_id
-  const userUrl = getUserUrl(userId, urlDatabase);
-  console.log(userUrl)
-  const templateVars = {
-    user: users[req.cookies.user_id],
-    shortURL,
-    urlDatabase,
-    userUrl,
-    date
-  }
-  if (!req.cookies.user_id) {
-    res.render('urls_login', templateVars)
-  } else {
-    res.render('urls_index', templateVars);
-  }
-});
 
 // User request short url & Add urls to urlDatabase
 app.post("/urls", (req, res) => {
@@ -309,10 +307,6 @@ const cookieChecker = function(cookie, users) {
 //   } return urls;
 // }
 
-
-// app.get("/", (req, res) => {
-//   res.send("Hello!");
-// });
 
 // app.get("/hello", (req, res) => {
 //   res.send("<html><body>Hello <b>World</b></body></html>\n");
