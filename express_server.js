@@ -11,6 +11,8 @@ app.set("view engine", "ejs");
 
 app.use(morgan("dev"))
 
+/* DO All THE ERROR CASES!!!!!! */
+
 
 
 const urlDatabase = {
@@ -32,51 +34,76 @@ const users = {
   }
 }
 
+/* 
+GET/ 
+if user is logged in redirect to /urls
+if not redirect to /login 
+*/
+
+// render main index page (when logged in)
+app.get("/urls", (req, res) => {
+  const date = new Date().toLocaleDateString();
+  const templateVars = { 
+   createdDate: date,
+   user: users[req.cookies.user_id],
+   urls: urlDatabase };
+   console.log(users)
+  res.render('urls_index', templateVars);
+});
+
+// Handle login page
+app.post("/login", (req, res) => {
+  res.redirect('/urls')
+  console.log(`${req.body.user_id} logged in!`)
+})
+
+/* GET /urls */
+
+// Handle logout (clear current user_id cookie)
+app.post('/logout', (req, res) => {
+  console.log(`${req.cookies.use_id} logged out!`)
+  res.clearCookie('user_id')
+  res.redirect('/urls')
+  
+})
+
+// Edit URL & redirect to urls page
+app.post('/urls/:shortURL/edit', (req, res) => {
+  const shortURL = req.params.shortURL
+  urlDatabase[shortURL] = req.body.editURL
+  res.redirect('/urls')
+})
+
+// Delete URL using POST and redirect to urls page
+app.post('/urls/:shortURL/delete', (req, res) => {
+  delete urlDatabase[req.params.shortURL];
+  res.redirect('/urls')
+})
+
+
 // Handle registration form data
 app.post("/register", (req, res) => {
   const randomId = generateRandomString();
-  let info = {id: randomId, email: req.body.email, password: req.body.password}
-  users[randomId] = info
-  console.log(users);
-  res.cookie('user_id', randomId);
-  res.redirect('/urls');
+  users[randomId] = {id: randomId, email: req.body.email, password: req.body.password}
+  
+  res.cookie('user_id', randomId)
+  res.redirect('/urls')
 })
 
 // Render sign up page (Register) 
 app.get("/register", (req, res) => {
   const templateVars = { 
-    username: req.cookies.username,
-    urls: urlDatabase };
-   res.render('urls_register', templateVars);
+  user: users[req.cookies.user_id],
+  urls: urlDatabase };
+  res.render('urls_register', templateVars);
 })
 
-// Handle login (matches 'username' with username)
-app.post("/login", (req, res) => {
-  res.cookie('username', req.body.username)
-  res.redirect('/urls')
-  console.log(`${req.body.username} logged in!`)
-})
 
-// Handle logout (clear current username cookie)
-app.post('/logout', (req, res) => {
-  console.log(`${req.cookies.username} logged out!`)
-  res.clearCookie('username')
-  res.redirect('/urls')
-  
-})
-
-// render main index page
-app.get("/urls", (req, res) => {
-  const templateVars = { 
-   username: req.cookies.username,
-   urls: urlDatabase };
-  res.render('urls_index', templateVars);
-});
 
 // Render new page for inputting original url
 app.get("/urls/new", (req, res) => {
   const templateVars = { 
-    username: req.cookies.username,
+    user : users[req.cookies.user_id],
     urls: urlDatabase };
   res.render('urls_new', templateVars);
 });
@@ -106,7 +133,7 @@ app.get(`/urls/:shortURL`, (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];
   const templateVars = { 
-    username: req.cookies.username,
+    user: users[req.cookies.user_id],
     shortURL, 
     longURL };
   if (longURL) {
@@ -116,25 +143,6 @@ app.get(`/urls/:shortURL`, (req, res) => {
   }
 });
 
-app.get("/", (req, res) => {
-  res.send("Hello!");
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
-
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
-
-// Edit URL & redirect to urls page
-app.post('/urls/:shortURL/edit', (req, res) => {
-  const shortURL = req.params.shortURL
-  urlDatabase[shortURL] = req.body.editURL
-  res.redirect('/urls')
-})
 
 
 // redirect to urls_show page via edit buttons
@@ -144,11 +152,6 @@ app.get('/urls/:shortURL/edit', (req, res) => {
 })
 
 
-// Delete URL using POST and redirect to urls page
-app.post('/urls/:shortURL/delete', (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  res.redirect('/urls')
-})
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
@@ -164,3 +167,15 @@ const generateRandomString = function () {
   }
   return result;
 }
+
+// app.get("/", (req, res) => {
+//   res.send("Hello!");
+// });
+
+// app.get("/hello", (req, res) => {
+//   res.send("<html><body>Hello <b>World</b></body></html>\n");
+// });
+
+// app.get("/urls.json", (req, res) => {
+//   res.json(urlDatabase);
+// });
