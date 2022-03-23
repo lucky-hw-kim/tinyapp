@@ -10,7 +10,7 @@ app.use(cookieParser());
 app.set("view engine", "ejs");
 app.use(morgan("dev"));
 
-/* DO All THE ERROR CASES!!!!!! */
+
 
 const urlDatabase = {
 //   b6UTxQ: {
@@ -63,32 +63,6 @@ app.get("/urls", (req, res) => {
   }
 });
 
-// Handle registration form data (email & password)
-app.post("/register", (req, res) => {
-  if(emailChecker(req.body.email, users)){
-  res.status(403).send('This Email is alreay taken 🥷');
-  }
-  if(req.body.email === '' || req.body.password === '' ){
-    res.status(406).send('You MUST enter email && password 🤬');
-  } 
-  const randomId = generateRandomString();
-  users[randomId] = {
-    id: randomId, 
-    email: req.body.email, 
-    password: req.body.password
-  }
-  res.cookie('user_id', randomId);
-  res.redirect('/urls');
-});
-
-// Render sign up page (Register)
-app.get("/register", (req, res) => {
-  const templateVars = {
-    user: users[req.cookies.user_id],
-    urls: urlDatabase };
-  res.render('urls_register', templateVars);
-});
-
 // Render login page 
 app.get("/login", (req, res) => {
   const templateVars = {
@@ -99,14 +73,14 @@ app.get("/login", (req, res) => {
 });
 
 // POST action for when user login
-app.post("/login", (req, res) => {
+app.post("/login", (req, res, next) => {
   if(emailChecker(req.body.email, users)) {
     if(!passwordChecker(req.body.password, users)) {
       console.log(req.body.password);
-      res.status(403).send("DOUBLE & TRIPLE CHECK YOUR PASSWARDDDdddddd!🤌")
+      res.status(403).send("DOUBLE & TRIPLE CHECK YOUR PASSWARDDdddd!🤌")
+      next();
     } else {
       const userId = getUserId(req.body.email, users);
-      console.log(userId)
       users[userId] = {
         id: userId, 
         email: req.body.email, 
@@ -117,6 +91,7 @@ app.post("/login", (req, res) => {
   }
   if(!emailChecker(req.body.email, users)){
     res.status(403).send("DOUBLE & TRIPLE CHECK YOUR EMAIL ADDRESSSSSssss!🤌")
+    next();
   }
   res.redirect('/urls');
   console.log(`${req.cookies.user_id} logged in!`);
@@ -129,94 +104,134 @@ app.post('/logout', (req, res) => {
   res.redirect('/urls');
 });
 
-//URL Register and Handling
-
-// Edit URL & redirect to urls page
-app.post('/urls/:shortURL/edit', (req, res) => {
-  const shortURL = req.params.shortURL;
-  const userId = req.cookies.user_id
-  const userUrl = getUserUrl(userId, urlDatabase);
-  userUrl[shortURL].longURL = req.body.editURL;
-  res.redirect('/urls');
-});
-
-// Delete URL using POST and redirect to urls page
-app.post('/urls/:shortURL/delete', (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  res.redirect('/urls');
-});
-
-// Render new page for inputting original url
-app.get("/urls/new", (req, res) => {
-  const date = new Date().toLocaleDateString();
+// Render sign up page (Register)
+app.get("/register", (req, res) => {
+  if(req.cookies.user_id){
+    res.redirect('/urls')
+  }
   const templateVars = {
-    createdDate: date,
     user: users[req.cookies.user_id],
-    urls: urlDatabase
-  };
-
-    if(!req.cookies.user_id) {
-      res.render('urls_login', templateVars);
-    }
-    res.render('urls_new', templateVars);
+    urls: urlDatabase };
+  res.render('urls_register', templateVars);
 });
 
+// Handle registration form data (email & password)
+app.post("/register", (req, res, next) => {
+  if(emailChecker(req.body.email, users)){
+  res.status(403).send('This Email is alreay taken 🥷');
+  next();
+  }
+  if(req.body.email === '' || req.body.password === '' ){
+    res.status(406).send('You MUST enter email && password 🤬');
+    next();
+  } 
+  const randomId = generateRandomString();
+  users[randomId] = {
+    id: randomId, 
+    email: req.body.email, 
+    password: req.body.password
+  }
+  res.cookie('user_id', randomId);
+  res.redirect('/urls');
+});
 
+//URL Register and Handling
 // User request short url & Add urls to urlDatabase
-app.post("/urls", (req, res) => {
-
+app.post("/urls", (req, res, next) => {
   if(!req.cookies.user_id) {
     res.status(405).send("Don't try to sneak it! Login FIRST!!!🚔")
-  }
-
+    next();
+  } else {
     let shortURL = generateRandomString();
     urlDatabase[shortURL] = {
       userId: req.cookies.user_id,
       longURL: req.body.longURL
     }
-    console.log(urlDatabase[shortURL])
     res.redirect(`/urls/${shortURL}`);
+  }
+});
+
+// Render new page for inputting original url
+app.get("/urls/new", (req, res) => {
+  const templateVars = { user: users[req.cookies.user_id] };
+    if(!req.cookies.user_id) {
+      res.redirect('/login');
+    }
+    res.render('urls_new', templateVars);
+});
+
+
+// Edit URL & redirect to urls page
+app.post('/urls/:shortURL/edit', (req, res, next) => {
+  const shortURL = req.params.shortURL;
+  const userId = req.cookies.user_id
+  const userUrl = getUserUrl(userId, urlDatabase);
+  if(req.cookies.user_id === urlDatabase[shortURL].userId) {
+    userUrl[shortURL].longURL = req.body.editURL;
+    res.redirect('/urls');
+  } else {
+    res.status(405).send("You need to login with your email first! 👆")
+    next();
+  }
+});
+
+// Delete URL using POST and redirect to urls page
+app.post('/urls/:shortURL/delete', (req, res, next) => {
+  const shortURL = req.params.shortURL;
+  const userId = req.cookies.user_id
+  if(req.cookies.user_id === urlDatabase[shortURL].userId) {
+    delete urlDatabase[req.params.shortURL];
+    res.redirect('/urls');
+  } else {
+    res.status(405).send("You need to login with your email first! 👆")
+    next();
+  }
 });
 
 // Open up result page with links
-app.get(`/urls/:shortURL`, (req, res) => {
+app.get(`/urls/:shortURL`, (req, res, next) => {
   const shortURL = req.params.shortURL;
   const userId = req.cookies.user_id
   const userUrl = getUserUrl(userId, urlDatabase);
-  console.log(userUrl)
   const templateVars = {
     user: users[req.cookies.user_id],
     shortURL,
     urlDatabase,
     userUrl
   }
-  if (userUrl) {
-    res.render('urls_show', templateVars);
-  } else {
+  if (!urlDatabase[shortURL]) {
     res.status(404).send('ERRrrr... cannot reach further 👻');
+    next();
+  } else if (urlDatabase[shortURL] && userId === urlDatabase  [shortURL].userId) {
+  res.render('urls_show', templateVars);
+  } else {
+    res.status(404).send("You need to login with your email first! 👆")
   }
 });
 
-// Redirecting shortURL to longURL
-app.get("/u/:shortURL", (req, res) => {
+// Redirecting shortURL to longURL 
+/* DO All THE ERROR CASES!!!!!! */
+app.get("/u/:shortURL", (req, res, next) => {
   const shortURL = req.params.shortURL;
   const userId = req.cookies.user_id
   const userUrl = getUserUrl(userId, urlDatabase);
   console.log(userUrl)
-  const longURL = userUrl[shortURL].longURL;
+  const longURL = urlDatabase[shortURL].longURL;
   const templateVars = {
     user: users[req.cookies.user_id],
     shortURL,
     urlDatabase,
     userUrl
   }
-  if (longURL) {
-    if (longURL === undefined) {
-      res.status(404).send('ERRrrr... Page Not Found 🥲 ');
-    }
-    res.redirect(longURL);
-  } else {
+  if (!Object.keys(urlDatabase).includes(shortURL)) {
     res.status(404).send('Hmmmm...🧐 Are you sure about the URL? ');
+    next();
+  }
+  if (urlDatabase[shortURL]) {
+      res.redirect(longURL);
+    } else {
+    res.status(404).send('Hmmmm...🧐 Are you sure about the URL? ');
+    next();
   }
 });
 
