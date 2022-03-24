@@ -60,7 +60,7 @@ app.post("/login", (req, res, next) => {
       res.status(403).send("DOUBLE & TRIPLE CHECK YOUR PASSWARDDdddd!🤌")
       next();
     } else {
-      const userId = getUserId(req.body.email, users);
+      const userId = getUserByEmail(req.body.email, users).id;
       req.session.user_id = users[userId].id;
       res.redirect('/urls');
     }
@@ -232,7 +232,7 @@ const generateRandomString = function() {
 };
 
 // Function to look up existing Email
-const emailChecker = function(userEmail, users) {
+const emailChecker = function(userEmail, database) {
   for(const user in users){
     if(users[user].email === userEmail){
     return true;
@@ -250,10 +250,10 @@ const passwordChecker = function(userPassword) {
   return false
 }
 
-const getUserId = function(userEmail, users) {
+const getUserByEmail = function(userEmail, users) {
   for(const user in users) {
-    if(emailChecker(userEmail, users)) {
-      return users[user].id
+    if(users[user].email === userEmail) {
+      return users[user]
     }
   }
 }
