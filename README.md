@@ -4,6 +4,13 @@ App that shortens your URLs
 ## Description
 - A full stack web app built with Node and Express that allows users to shorten long URLs 
 
+## Final Product
+!["Screentshot of URLs page ](https://github.com/lucky-hw-kim/tinyapp/blob/master/docs/urls.png?raw=true)
+!["Screentshot login/signup request page](https://github.com/lucky-hw-kim/tinyapp/blob/master/docs/home:Login.png?raw=true)
+!["Screentshot of landing page after submitting URL](https://github.com/lucky-hw-kim/tinyapp/blob/master/docs/shortURL.png?raw=true)
+!["Screentshot of creating shortURL page ](https://github.com/lucky-hw-kim/tinyapp/blob/master/docs/New-URL.png?raw=true)
+
+
 ## Features
 - Create shorten version of URL and send the URL back to the user
 - Users should be able to access to the original website with the shorten verion of URL
