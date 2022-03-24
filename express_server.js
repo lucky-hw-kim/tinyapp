@@ -1,6 +1,7 @@
 const cookieParser = require('cookie-parser');
 const morgan = require("morgan");
 const express = require("express");
+const bcrypt = require('bcryptjs');
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
@@ -10,41 +11,8 @@ app.use(cookieParser());
 app.set("view engine", "ejs");
 app.use(morgan("dev"));
 
-
-
-const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    userId: "user1"
-},
-  i3BoGr: {
-    longURL: "https://www.google.ca",
-    userId: "user1"
-},   
-  i05BoGr: {
-    longURL: "https://www.google.ca",
-    userId: "user1"
-  },
-
-  i05B4Gr: {
-    longURL: "https://www.google.ca",
-    userId: "user2"
-  }
-
-};
-
-const users = {
-  "user1": {
-    id: "user1",
-    email: "1@a.com",
-    password: "1"
-  },
-  "user2": {
-    id: "user2",
-    email: "2@a.com",
-    password: "2"
-  }
-};
+const urlDatabase = {};
+const users = {};
 
 //Main Home Page
 app.get("/", (req, res) => {
@@ -75,15 +43,13 @@ app.get("/login", (req, res) => {
   const templateVars = {
     user: users[req.cookies.user_id],
     urls: urlDatabase };
-    console.log(templateVars);
   res.render('urls_login', templateVars);
 });
 
 // POST action for when user login
 app.post("/login", (req, res, next) => {
-  console.log('Body:', req.body);
   if(emailChecker(req.body.email, users)) {
-    if(!passwordChecker(req.body.password, users)) {
+    if(!passwordChecker(req.body.password)) {
       res.status(403).send("DOUBLE & TRIPLE CHECK YOUR PASSWARDDdddd!🤌")
       next();
     } else {
@@ -91,21 +57,18 @@ app.post("/login", (req, res, next) => {
       users[userId] = {
         id: userId, 
         email: req.body.email, 
-        password: req.body.password
+        hashedPassword: req.body.password
       }
       res.cookie('user_id', userId);
       res.redirect('/urls');
     }
   }else {
-    console.log(req.body.email);
-    console.log(users);
     res.status(403).send("DOUBLE & TRIPLE CHECK YOUR EMAIL ADDRESSSSSssss!🤌")
   }
 });
 
 // Handle logout (clear current user_id cookie)
 app.post('/logout', (req, res) => {
-  console.log(`${req.cookies.user_id} logged out!`);
   res.clearCookie('user_id');
   res.redirect('/urls');
 });
@@ -131,13 +94,14 @@ app.post("/register", (req, res, next) => {
     res.status(406).send('You MUST enter email && password 🤬');
   return;
   } 
+  const password = req.body.password;
+  const hashedPassword = bcrypt.hashSync(password, 10);
   const randomId = generateRandomString();
   users[randomId] = {
     id: randomId, 
     email: req.body.email, 
-    password: req.body.password
+    hashedPassword: hashedPassword
   }
-  console.log(users);
   res.cookie('user_id', randomId);
   res.redirect('/urls');
 });
@@ -223,7 +187,6 @@ app.get("/u/:shortURL", (req, res, next) => {
   const shortURL = req.params.shortURL;
   const userId = req.cookies.user_id
   const userUrl = getUserUrl(userId);
-  console.log(userUrl)
 
   if (typeof urlDatabase[shortURL] === undefined ) {
     res.status(404).send('Hmmmm...🧐 Are you sure about the URL? ');
@@ -275,10 +238,10 @@ const emailChecker = function(userEmail, users) {
   return false;
 }
 
-const passwordChecker = function(userPassword, users) {
-  for(const user in users){
-    if(users[user].password === userPassword){
-    return true;
+const passwordChecker = function(userPassword) {
+  for(const user in users) {
+    if(bcrypt.compareSync(userPassword, users[user].hashedPassword)){
+      return true
     } 
   }
   return false
