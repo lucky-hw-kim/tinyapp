@@ -13,7 +13,6 @@ app.use(morgan("dev"));
 app.use(cookieSession({
   name: 'user_id',
   keys: ['Eggy'],
-
   // Cookie Options
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
 }))
@@ -50,7 +49,10 @@ app.get("/login", (req, res) => {
     user: users[req.session.user_id],
     urls: urlDatabase 
   };
-  res.render('urls_login', templateVars);
+  if (!req.session.user_id){
+    res.render('urls_login', templateVars);
+  } res.redirect("/urls");
+  
 });
 
 // POST action for when user login
@@ -139,7 +141,7 @@ app.get("/urls/new", (req, res) => {
 app.post('/urls/:shortURL/edit', (req, res, next) => {
   const shortURL = req.params.shortURL;
   const userId = req.session.user_id
-  const userUrl = getUserUrl(userId);
+  const userUrl = getUserUrl(userId, urlDatabase);
   if(req.session.user_id === urlDatabase[shortURL].userId) {
     userUrl[shortURL].longURL = req.body.editURL;
     res.redirect('/urls');
@@ -166,8 +168,8 @@ app.post('/urls/:shortURL/delete', (req, res, next) => {
 // Open up result page with links
 app.get(`/urls/:shortURL`, (req, res, next) => {
   const shortURL = req.params.shortURL;
-  const userId = req.session.user_id
-  const userUrl = getUserUrl(userId);
+  const userId = req.session.user_id;
+  const userUrl = getUserUrl(userId, urlDatabase);
   const templateVars = {
     user: users[req.session.user_id],
     shortURL,
@@ -175,9 +177,9 @@ app.get(`/urls/:shortURL`, (req, res, next) => {
     userUrl
   }
   if (!urlDatabase[shortURL]) {
-    res.status(404).send('ERRrrr... cannot reach further 👻');
+    res.status(404).send('ERRrrr... cannot find the url 👻');
     next();
-  } else if (urlDatabase[shortURL] && userId === urlDatabase  [shortURL].userId) {
+  } else if (urlDatabase[shortURL] && userId === urlDatabase[shortURL].userId) {
   res.render('urls_show', templateVars);
   } else {
     res.status(405).send("You don't have a permission to access this url 😡")
@@ -185,7 +187,6 @@ app.get(`/urls/:shortURL`, (req, res, next) => {
 });
 
 // Redirecting shortURL to longURL 
-/* DO All THE ERROR CASES!!!!!! */
 app.get("/u/:shortURL", (req, res, next) => {
   const shortURL = req.params.shortURL;
   const userId = req.session.user_id
