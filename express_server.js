@@ -13,30 +13,36 @@ app.use(morgan("dev"));
 
 
 const urlDatabase = {
-//   b6UTxQ: {
-//     longURL: "https://www.tsn.ca",
-//     userID: "aJ48lW"
-// },
-//   i3BoGr: {
-//     longURL: "https://www.google.ca",
-//     userID: "aJ48lW"
-// },   
-//   i05BoGr: {
-//     longURL: "https://www.google.ca",
-//     userID: "aJ48lW"
-//   }
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "user1"
+},
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "user1"
+},   
+  i05BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "user1"
+  },
+
+  i05B4Gr: {
+    longURL: "https://www.google.ca",
+    userID: "user2"
+  }
+
 };
 
 const users = {
   "aJ48lW": {
-    id: "aJ48lW",
-    email: "user1@a.com",
-    password: "abc"
+    id: "user1",
+    email: "1@a.com",
+    password: "1"
   },
   "user2RandomID": {
-    id: "user2RandomID",
-    email: "user2@a.com",
-    password: "123"
+    id: "user2",
+    email: "2@a.com",
+    password: "2"
   }
 };
 
@@ -57,8 +63,9 @@ app.get("/urls", (req, res) => {
     userUrl: userUrl
   }
   if (!req.cookies.user_id) {
-    res.redirect('/login')
+    res.render('urls_error', templateVars)
   } else {
+
     res.render('urls_index', templateVars);
   }
 });
@@ -205,7 +212,7 @@ app.get(`/urls/:shortURL`, (req, res, next) => {
   } else if (urlDatabase[shortURL] && userId === urlDatabase  [shortURL].userId) {
   res.render('urls_show', templateVars);
   } else {
-    res.status(404).send("You need to login with your email first! 👆")
+    res.render('urls_error', templateVars)
   }
 });
 
@@ -216,18 +223,18 @@ app.get("/u/:shortURL", (req, res, next) => {
   const userId = req.cookies.user_id
   const userUrl = getUserUrl(userId, urlDatabase);
   console.log(userUrl)
-  const longURL = urlDatabase[shortURL].longURL;
-  const templateVars = {
-    user: users[req.cookies.user_id],
-    shortURL,
-    urlDatabase,
-    userUrl
-  }
-  if (!Object.keys(urlDatabase).includes(shortURL)) {
+
+  if (typeof urlDatabase[shortURL] === undefined ) {
     res.status(404).send('Hmmmm...🧐 Are you sure about the URL? ');
     next();
-  }
-  if (urlDatabase[shortURL]) {
+  } else if (urlDatabase[shortURL]) {
+    const longURL = urlDatabase[shortURL].longURL;
+    const templateVars = {
+      user: users[req.cookies.user_id],
+      shortURL,
+      urlDatabase,
+      userUrl
+    }
       res.redirect(longURL);
     } else {
     res.status(404).send('Hmmmm...🧐 Are you sure about the URL? ');
@@ -297,16 +304,17 @@ const getUserUrl = function(user_id, urlDatabase) {
   return userUrl;
 }
 
-const cookieChecker = function(cookie, users) {
-  for(const user in users){
-    if(cookie === users[user]) {
-      return true;
-    }
-    else {
-      return false
-    }
-  }
-}
+
+// const cookieChecker = function(cookie, users) {
+//   for(const user in users){
+//     if(cookie === users[user]) {
+//       return true;
+//     }
+//     else {
+//       return false
+//     }
+//   }
+// }
 
 
 // // return an object of urls for each user
