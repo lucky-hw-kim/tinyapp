@@ -15,31 +15,31 @@ app.use(morgan("dev"));
 const urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
-    userID: "user1"
+    userId: "user1"
 },
   i3BoGr: {
     longURL: "https://www.google.ca",
-    userID: "user1"
+    userId: "user1"
 },   
   i05BoGr: {
     longURL: "https://www.google.ca",
-    userID: "user1"
+    userId: "user1"
   },
 
   i05B4Gr: {
     longURL: "https://www.google.ca",
-    userID: "user2"
+    userId: "user2"
   }
 
 };
 
 const users = {
-  "aJ48lW": {
+  "user1": {
     id: "user1",
     email: "1@a.com",
     password: "1"
   },
-  "user2RandomID": {
+  "user2": {
     id: "user2",
     email: "2@a.com",
     password: "2"
@@ -56,7 +56,7 @@ app.get("/", (req, res) => {
 // render main index page (when logged in)
 app.get("/urls", (req, res) => {
   const userId = req.cookies.user_id
-  const userUrl = getUserUrl(userId, urlDatabase);
+  const userUrl = getUserUrl(userId);
   const templateVars = {
     date: new Date().toLocaleDateString(),
     user: users[req.cookies.user_id],
@@ -81,9 +81,9 @@ app.get("/login", (req, res) => {
 
 // POST action for when user login
 app.post("/login", (req, res, next) => {
+  console.log('Body:', req.body);
   if(emailChecker(req.body.email, users)) {
     if(!passwordChecker(req.body.password, users)) {
-      console.log(req.body.password);
       res.status(403).send("DOUBLE & TRIPLE CHECK YOUR PASSWARDDdddd!🤌")
       next();
     } else {
@@ -94,14 +94,13 @@ app.post("/login", (req, res, next) => {
         password: req.body.password
       }
       res.cookie('user_id', userId);
+      res.redirect('/urls');
     }
-  }
-  if(!emailChecker(req.body.email, users)){
+  }else {
+    console.log(req.body.email);
+    console.log(users);
     res.status(403).send("DOUBLE & TRIPLE CHECK YOUR EMAIL ADDRESSSSSssss!🤌")
-    next();
   }
-  res.redirect('/urls');
-  console.log(`${req.cookies.user_id} logged in!`);
 });
 
 // Handle logout (clear current user_id cookie)
@@ -126,11 +125,11 @@ app.get("/register", (req, res) => {
 app.post("/register", (req, res, next) => {
   if(emailChecker(req.body.email, users)){
   res.status(403).send('This Email is alreay taken 🥷');
-  next();
+  return;
   }
   if(req.body.email === '' || req.body.password === '' ){
     res.status(406).send('You MUST enter email && password 🤬');
-    next();
+  return;
   } 
   const randomId = generateRandomString();
   users[randomId] = {
@@ -138,6 +137,7 @@ app.post("/register", (req, res, next) => {
     email: req.body.email, 
     password: req.body.password
   }
+  console.log(users);
   res.cookie('user_id', randomId);
   res.redirect('/urls');
 });
@@ -172,7 +172,7 @@ app.get("/urls/new", (req, res) => {
 app.post('/urls/:shortURL/edit', (req, res, next) => {
   const shortURL = req.params.shortURL;
   const userId = req.cookies.user_id
-  const userUrl = getUserUrl(userId, urlDatabase);
+  const userUrl = getUserUrl(userId);
   if(req.cookies.user_id === urlDatabase[shortURL].userId) {
     userUrl[shortURL].longURL = req.body.editURL;
     res.redirect('/urls');
@@ -186,12 +186,13 @@ app.post('/urls/:shortURL/edit', (req, res, next) => {
 app.post('/urls/:shortURL/delete', (req, res, next) => {
   const shortURL = req.params.shortURL;
   const userId = req.cookies.user_id
-  if(req.cookies.user_id === urlDatabase[shortURL].userId) {
-    delete urlDatabase[req.params.shortURL];
-    res.redirect('/urls');
-  } else {
+  if(!userId) {
     res.status(405).send("You need to login with your email first! 👆")
     next();
+  }
+  if(userId && userId === urlDatabase[shortURL].userId) {
+    delete urlDatabase[req.params.shortURL];
+    res.redirect('/urls');
   }
 });
 
@@ -199,7 +200,7 @@ app.post('/urls/:shortURL/delete', (req, res, next) => {
 app.get(`/urls/:shortURL`, (req, res, next) => {
   const shortURL = req.params.shortURL;
   const userId = req.cookies.user_id
-  const userUrl = getUserUrl(userId, urlDatabase);
+  const userUrl = getUserUrl(userId);
   const templateVars = {
     user: users[req.cookies.user_id],
     shortURL,
@@ -212,7 +213,7 @@ app.get(`/urls/:shortURL`, (req, res, next) => {
   } else if (urlDatabase[shortURL] && userId === urlDatabase  [shortURL].userId) {
   res.render('urls_show', templateVars);
   } else {
-    res.render('urls_error', templateVars)
+    res.status(405).send("You don't have a permission to access this url 😡")
   }
 });
 
@@ -221,7 +222,7 @@ app.get(`/urls/:shortURL`, (req, res, next) => {
 app.get("/u/:shortURL", (req, res, next) => {
   const shortURL = req.params.shortURL;
   const userId = req.cookies.user_id
-  const userUrl = getUserUrl(userId, urlDatabase);
+  const userUrl = getUserUrl(userId);
   console.log(userUrl)
 
   if (typeof urlDatabase[shortURL] === undefined ) {
@@ -269,20 +270,18 @@ const emailChecker = function(userEmail, users) {
   for(const user in users){
     if(users[user].email === userEmail){
     return true;
-    } else {
-      return false
-    }
+    } 
   }
+  return false;
 }
 
 const passwordChecker = function(userPassword, users) {
   for(const user in users){
     if(users[user].password === userPassword){
     return true;
-    } else {
-      return false
-    }
+    } 
   }
+  return false
 }
 
 
@@ -294,7 +293,7 @@ const getUserId = function(userEmail, users) {
   }
 }
 
-const getUserUrl = function(user_id, urlDatabase) {
+const getUserUrl = function(user_id) {
   const userUrl = {};
   for(const shortURL in urlDatabase) {
     if(urlDatabase[shortURL].userId === user_id){
