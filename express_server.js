@@ -1,3 +1,4 @@
+const {generateRandomString, emailChecker, passwordChecker, getUserByEmail, getUserUrl} = require('./helpers')
 const cookieSession = require('cookie-session')
 const morgan = require("morgan");
 const express = require("express");
@@ -30,7 +31,7 @@ app.get("/", (req, res) => {
 // render main index page (when logged in)
 app.get("/urls", (req, res) => {
   const userId = req.session.user_id
-  const userUrl = getUserUrl(userId);
+  const userUrl = getUserUrl(userId, urlDatabase);
   const templateVars = {
     date: new Date().toLocaleDateString(),
     user: users[req.session.user_id],
@@ -54,9 +55,8 @@ app.get("/login", (req, res) => {
 
 // POST action for when user login
 app.post("/login", (req, res, next) => {
-  console.log("req-session:", req.session, req.session.session)
   if(emailChecker(req.body.email, users)) {
-    if(!passwordChecker(req.body.password)) {
+    if(!passwordChecker(req.body.password, users)) {
       res.status(403).send("DOUBLE & TRIPLE CHECK YOUR PASSWARDDdddd!🤌")
       next();
     } else {
@@ -219,51 +219,5 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
-// Functions!
 
-// Function to generater 6 random alphabet string
-const generateRandomString = function() {
-  let result = '';
-  const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  for (let i = 0; i < 6; i++) {
-    result += alphabet[Math.floor(Math.random() * alphabet.length)];
-  }
-  return result;
-};
 
-// Function to look up existing Email
-const emailChecker = function(userEmail, database) {
-  for(const user in users){
-    if(users[user].email === userEmail){
-    return true;
-    } 
-  }
-  return false;
-}
-
-const passwordChecker = function(userPassword) {
-  for(const user in users) {
-    if(bcrypt.compareSync(userPassword, users[user].hashedPassword)){
-      return true
-    } 
-  }
-  return false
-}
-
-const getUserByEmail = function(userEmail, users) {
-  for(const user in users) {
-    if(users[user].email === userEmail) {
-      return users[user]
-    }
-  }
-}
-
-const getUserUrl = function(user_id) {
-  const userUrl = {};
-  for(const shortURL in urlDatabase) {
-    if(urlDatabase[shortURL].userId === user_id){
-      userUrl[shortURL]= urlDatabase[shortURL]
-    }
-  }
-  return userUrl;
-}
